@@ -1,0 +1,16 @@
+name: CI
+on: [workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Python
+        run: |
+          pip install Pillow
+          python -c "from PIL import Image, ImageDraw; img = Image.new('RGB', (1080, 1920), color='#1A1A1B'); draw = ImageDraw.Draw(img); draw.rectangle([0, 840, 1080, 1080], fill='#FF4E00'); img.save('video.png')"
+      - name: Save
+        uses: actions/upload-artifact@v4
+        with:
+          name: Result
+          path: video.png
