@@ -9,35 +9,55 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
-          pip install Pillow
-      - name: Render Dynamic Reels Video
+          pip install Pillow requests
+      - name: Download Real S500 Asset & Render
         run: |
           python -c "
-          from PIL import Image, ImageDraw
-          import subprocess
+          import requests, subprocess, os
+          from PIL import Image, ImageDraw, ImageFont
 
-          # 1. 고해상도 베이스 프레임 생성 (다크 그레이 + 마그마 오렌지 박스)
-          width, height = 1080, 1920
-          img = Image.new('RGB', (width, height), color='#1A1A1B')
-          draw = ImageDraw.Draw(img)
+          # 1. W222 S500 실제 실내 고화질 이미지 다운로드 (Wikimedia 공공 소스 활용)
+          url = 'https://upload.wikimedia.org/wikipedia/commons/b/b3/2014_Mercedes-Benz_S500_L_Premium_Plus_Interior.jpg'
+          print('Downloading W222 S500 real asset...')
+          r = requests.get(url, timeout=15)
+          with open('source.jpg', 'wb') as f:
+              f.write(r.content)
+
+          # 2. 이미지 9:16 릴스 비율로 맞추고 자막 및 오렌지 박스 합성
+          base = Image.open('source.jpg').convert('RGB')
+          # 9:16 비율(1080x1920)로 크롭 및 리사이즈
+          base = base.resize((1080, 1920), Image.Resampling.LANCZOS)
           
-          # 하단 강조 박스
-          draw.rectangle([0, 840, 1080, 1080], fill='#FF4E00')
-          draw.text((120, 900), 'THE LAST S-CLASS', fill='#FFFFFF')
-          draw.text((120, 980), 'El ultimo Clase S autentico', fill='#E1E1E1')
-          img.save('frame.png')
+          draw = ImageDraw.Draw(base)
           
-          # 2. FFmpeg 고급 필터 적용: 서서히 확대되는 줌인(Ken Burns) 효과 + 릴스 규격 인코딩
+          # 하단 마그마 오렌지 강조 박스
+          draw.rectangle([0, 1400, 1080, 1750], fill='#FF4E00')
+          
+          try:
+              font_title = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 60)
+              font_sub = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 40)
+          except:
+              font_title = ImageFont.load_default()
+              font_sub = ImageFont.load_default()
+
+          # 텍스트 삽입
+          draw.text((80, 1470), 'THE LAST S-CLASS', fill='#FFFFFF', font=font_title)
+          draw.text((80, 1560), 'El ultimo Clase S autentico', fill='#1A1A1B', font=font_sub)
+          
+          base.save('final_frame.jpg')
+
+          # 3. 5초짜리 다이내믹 줌인 릴스 영상으로 렌더링
           cmd = [
-              'ffmpeg', '-y', '-loop', '1', '-i', 'frame.png',
-              '-vf', 'zoompan=z=\'min(zoom+0.0015,1.5)\':d=125:s=1080x1920',
+              'ffmpeg', '-y', '-loop', '1', '-i', 'final_frame.jpg',
+              '-vf', 'zoompan=z=\'min(zoom+0.0015,1.3)\':d=125:s=1080x1920',
               '-c:v', 'libx264', '-t', '5', '-pix_fmt', 'yuv420p',
-              'W222_S500_Magma.mp4'
+              'W222_S500_Real_Reels.mp4'
           ]
           subprocess.run(cmd, check=True)
+          print('Real S500 reel video generated successfully!')
           "
-      - name: Upload Video
+      - name: Upload Real Video
         uses: actions/upload-artifact@v4
         with:
-          name: S500_Magma_Reels
-          path: W222_S500_Magma.mp4
+          name: S500_Real_Reels
+          path: W222_S500_Real_Reels.mp4
