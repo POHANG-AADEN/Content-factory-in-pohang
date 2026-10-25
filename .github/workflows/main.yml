@@ -10,18 +10,31 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
           pip install Pillow
-      - name: Render Full Magma Video
+      - name: Render Dynamic Reels Video
         run: |
           python -c "
           from PIL import Image, ImageDraw
           import subprocess
-          img = Image.new('RGB', (1080, 1920), color='#1A1A1B')
+
+          # 1. 고해상도 베이스 프레임 생성 (다크 그레이 + 마그마 오렌지 박스)
+          width, height = 1080, 1920
+          img = Image.new('RGB', (width, height), color='#1A1A1B')
           draw = ImageDraw.Draw(img)
+          
+          # 하단 강조 박스
           draw.rectangle([0, 840, 1080, 1080], fill='#FF4E00')
-          draw.text((150, 900), 'THE LAST S-CLASS', fill='#FFFFFF')
-          draw.text((150, 980), 'El ultimo Clase S autentico', fill='#E1E1E1')
+          draw.text((120, 900), 'THE LAST S-CLASS', fill='#FFFFFF')
+          draw.text((120, 980), 'El ultimo Clase S autentico', fill='#E1E1E1')
           img.save('frame.png')
-          subprocess.run(['ffmpeg', '-y', '-loop', '1', '-i', 'frame.png', '-c:v', 'libx264', '-t', '5', '-pix_fmt', 'yuv420p', 'W222_S500_Magma.mp4'], check=True)
+          
+          # 2. FFmpeg 고급 필터 적용: 서서히 확대되는 줌인(Ken Burns) 효과 + 릴스 규격 인코딩
+          cmd = [
+              'ffmpeg', '-y', '-loop', '1', '-i', 'frame.png',
+              '-vf', 'zoompan=z=\'min(zoom+0.0015,1.5)\':d=125:s=1080x1920',
+              '-c:v', 'libx264', '-t', '5', '-pix_fmt', 'yuv420p',
+              'W222_S500_Magma.mp4'
+          ]
+          subprocess.run(cmd, check=True)
           "
       - name: Upload Video
         uses: actions/upload-artifact@v4
