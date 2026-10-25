@@ -14,8 +14,8 @@ jobs:
           # 1. 테스트용 고화질 영상 다운로드
           curl -L -o input.mp4 "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
 
-          # 2. 핀터레스트 감성: 박스 없이 선명한 외곽선과 그림자만 들어간 미니멀 타이포그래피 적용
-          ffmpeg -y -i input.mp4 -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,drawtext=text='THE LAST S-CLASS':fontcolor=white:fontsize=65:borderw=4:bordercolor=black:x=(w-text_w)/2:y=1500,drawtext=text='El ultimo Clase S autentico':fontcolor=white:fontsize=40:borderw=2:bordercolor=black:x=(w-text_w)/2:y=1600" -t 5 -c:v libx264 -pix_fmt yuv420p Pinterest_Style_Reels.mp4
+          # 2. 시스템 폰트 경로를 지정하여 핀터레스트 스타일 미니멀 자막 적용
+          ffmpeg -y -i input.mp4 -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='THE LAST S-CLASS':fontcolor=white:fontsize=65:borderw=4:bordercolor=black:x=(w-text_w)/2:y=1500,drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:text='El ultimo Clase S autentico':fontcolor=white:fontsize=40:borderw=2:bordercolor=black:x=(w-text_w)/2:y=1600" -t 5 -c:v libx264 -pix_fmt yuv420p Pinterest_Style_Reels.mp4
       - name: Upload Clean Reels
         uses: actions/upload-artifact@v4
         with:
