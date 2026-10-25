@@ -10,20 +10,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
           pip install Pillow
-      - name: Render Video
+      - name: Render Full Magma Video
         run: |
           python -c "
           from PIL import Image, ImageDraw
           import subprocess
           img = Image.new('RGB', (1080, 1920), color='#1A1A1B')
           draw = ImageDraw.Draw(img)
-          # 마그마 오렌지 박스
           draw.rectangle([0, 840, 1080, 1080], fill='#FF4E00')
-          # 핀터레스트 스타일 자막 (영어/스페인어)
           draw.text((150, 900), 'THE LAST S-CLASS', fill='#FFFFFF')
           draw.text((150, 980), 'El ultimo Clase S autentico', fill='#E1E1E1')
           img.save('frame.png')
-          # 영상 렌더링
           subprocess.run(['ffmpeg', '-y', '-loop', '1', '-i', 'frame.png', '-c:v', 'libx264', '-t', '10', '-pix_fmt', 'yuv420p', 'W222_S500_Magma.mp4'], check=True)
           "
       - name: Upload Video
