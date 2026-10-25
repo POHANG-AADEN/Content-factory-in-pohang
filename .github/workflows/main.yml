@@ -14,28 +14,14 @@ jobs:
         run: |
           python -c "
           from PIL import Image, ImageDraw
-          import subprocess, os
-
-          # 1. 이미지 생성
+          import subprocess
           img = Image.new('RGB', (1080, 1920), color='#1A1A1B')
           draw = ImageDraw.Draw(img)
           draw.rectangle([0, 840, 1080, 1080], fill='#FF4E00')
           draw.text((150, 900), 'THE LAST S-CLASS', fill='#FFFFFF')
           draw.text((150, 980), 'El ultimo Clase S autentico', fill='#E1E1E1')
           img.save('frame.png')
-          print('Frame created successfully. Size:', os.path.getsize('frame.png'))
-
-          # 2. FFmpeg 실행 (출력 로그 포함)
-          cmd = ['ffmpeg', '-y', '-loop', '1', '-i', 'frame.png', '-c:v', 'libx264', '-t', '5', '-pix_fmt', 'yuv420p', 'W222_S500_Magma.mp4']
-          print('Running:', ' '.join(cmd))
-          result = subprocess.run(cmd, capture_output=True, text=True)
-          print('FFmpeg stdout:', result.stdout)
-          print('FFmpeg stderr:', result.stderr)
-
-          if os.path.exists('W222_S500_Magma.mp4'):
-              print('Video created successfully. Size:', os.path.getsize('W222_S500_Magma.mp4'))
-          else:
-              print('ERROR: Video file was not created!')
+          subprocess.run(['ffmpeg', '-y', '-loop', '1', '-i', 'frame.png', '-c:v', 'libx264', '-t', '5', '-pix_fmt', 'yuv420p', 'W222_S500_Magma.mp4'], check=True)
           "
       - name: Upload Video
         uses: actions/upload-artifact@v4
