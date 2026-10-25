@@ -9,52 +9,15 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
-          pip install Pillow
-      - name: Render Luxury S500 Reels
+      - name: Render Pinterest Style Reels
         run: |
-          python -c "
-          from PIL import Image, ImageDraw, ImageFont
-          import subprocess
+          # 1. 테스트용 고화질 영상 다운로드
+          curl -L -o input.mp4 "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
 
-          width, height = 1080, 1920
-          # 벤츠 실내 감성의 다크 럭셔리 그라데이션 배경 생성
-          img = Image.new('RGB', (width, height), color='#111113')
-          draw = ImageDraw.Draw(img)
-
-          # 실내 무드등(앰비언트 라이트) 느낌의 은은한 오렌지/골드 라인 추가
-          for i in range(0, height, 4):
-              color_val = int(25 + 15 * (i / height))
-              draw.line([(0, i), (width, i)], fill=(color_val, color_val, color_val + 5))
-
-          # 중앙 시선을 사로잡는 마그마 오렌지 강조 박스
-          draw.rectangle([0, 750, 1080, 1150], fill='#FF4E00')
-
-          # 폰트 설정 (시스템 기본 굵은 폰트 대체)
-          try:
-              font_title = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 65)
-              font_sub = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 45)
-          except:
-              font_title = ImageFont.load_default()
-              font_sub = ImageFont.load_default()
-
-          # 핀터레스트 스타일 자막 삽입
-          draw.text((80, 830), 'THE LAST S-CLASS', fill='#FFFFFF', font=font_title)
-          draw.text((80, 940), 'El ultimo Clase S autentico', fill='#1A1A1B', font=font_sub)
-
-          img.save('frame.jpg')
-
-          # FFmpeg로 다이내믹 줌인 릴스 영상 생성
-          cmd = [
-              'ffmpeg', '-y', '-loop', '1', '-i', 'frame.jpg',
-              '-vf', 'zoompan=z=\'min(zoom+0.0015,1.3)\':d=125:s=1080x1920',
-              '-c:v', 'libx264', '-t', '5', '-pix_fmt', 'yuv420p',
-              'W222_S500_Final_Reels.mp4'
-          ]
-          subprocess.run(cmd, check=True)
-          print('Reels video generated successfully!')
-          "
-      - name: Upload Final Video
+          # 2. 핀터레스트 감성: 박스 없이 선명한 외곽선과 그림자만 들어간 미니멀 타이포그래피 적용
+          ffmpeg -y -i input.mp4 -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,drawtext=text='THE LAST S-CLASS':fontcolor=white:fontsize=65:borderw=4:bordercolor=black:x=(w-text_w)/2:y=1500,drawtext=text='El ultimo Clase S autentico':fontcolor=white:fontsize=40:borderw=2:bordercolor=black:x=(w-text_w)/2:y=1600" -t 5 -c:v libx264 -pix_fmt yuv420p Pinterest_Style_Reels.mp4
+      - name: Upload Clean Reels
         uses: actions/upload-artifact@v4
         with:
-          name: W222_S500_Reels_Package
-          path: W222_S500_Final_Reels.mp4
+          name: Pinterest_Style_Reels
+          path: Pinterest_Style_Reels.mp4
