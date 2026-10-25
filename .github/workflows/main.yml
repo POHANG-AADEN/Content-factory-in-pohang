@@ -1,42 +1,90 @@
-name: Video Processor
-on: [workflow_dispatch]
+name: Ultimate Content Factory
+on:
+  workflow_dispatch:
+    inputs:
+      theme:
+        description: 'Select Content Theme'
+        required: true
+        default: 'benz'
+        type: choice
+        options:
+          - benz
+          - stockcar
+          - spain_building
+
 jobs:
-  build:
+  produce-content:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Tools
+      - name: Setup Environment
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
           pip install Pillow
-      - name: Render 100% Safe Reels
+
+      - name: Generate Content Package
         run: |
           python -c "
           from PIL import Image, ImageDraw
-          import subprocess
+          import subprocess, os
 
+          theme = '${{ github.event.inputs.theme }}'
+          print(f'Starting Content Factory for theme: {theme}')
+
+          # 테마별 문구 및 타이포 설정 (핀터레스트 감성: 박스 없음, 깔끔한 텍스트+외곽선)
+          content_data = {
+              'benz': {
+                  'en': 'THE LAST S-CLASS (W222)',
+                  'es': 'El último Clase S auténtico',
+                  'caption': '¿Es este el mejor Clase S jamás fabricado? 👑\nEl W222 S500 es una obra de arte. ¿Crees que este modelo es mejor que el nuevo W223? ¡Comenta!\n\n#MercedesBenz #W222 #S500 #ClaseS #CochesDeLujo'
+              },
+              'stockcar': {
+                  'en': 'EXTREME TUNING BUILD',
+                  'es': 'Modificación extrema de motor',
+                  'caption': '¿Cuánto gastarías en tunear este monstruo? 🏎️🔥\nPotencia pura y estética impecable en la pista.\n\n#StockCar #Tuning #CarCulture #CochesModificados #Speed'
+              },
+              'spain_building': {
+                  'en': 'HIDDEN SPANISH ARCHITECTURE',
+                  'es': 'Secretos de la arquitectura española',
+                  'ico': 'Descubre los rincones más mágicos y ocultos de España. Historia viva en cada muro. 🏛️✨\n\n#Architecture #Spain #ArquitecturaEspaña #TravelSpain'
+              }
+          }
+
+          data = content_data.get(theme, content_data['benz'])
+
+          # 1. 릴스 영상 프레임 생성 (9:16 비율, 시네마틱 다크 톤)
           width, height = 1080, 1920
-          img = Image.new('RGB', (width, height), color='#111113')
+          img = Image.new('RGB', (width, height), color='#121214')
           draw = ImageDraw.Draw(img)
 
-          # 기본 폰트로 안전하게 텍스트 박스 및 레이아웃 생성
-          draw.rectangle([100, 850, 980, 1050], fill='#000000', outline='#FFFFFF', width=2)
-          draw.text((150, 910), 'THE LAST S-CLASS (W222 S500)', fill='#FFFFFF')
-          draw.text((150, 970), 'El ultimo Clase S autentico', fill='#E1E1E1')
+          # 핀터레스트 미니멀 타이포그래피 (그림자 효과 시뮬레이션)
+          # 기본 폰트 크기 및 위치 설정 (중앙 하단 배치)
+          # 실제 텍스트 렌더링
+          draw.text((120, 1450), data['en'], fill='#FFFFFF')
+          draw.text((120, 1530), data['es'], fill='#E1E1E1')
 
-          img.save('safe_frame.png')
+          img.save('reel_frame.png')
 
+          # 2. FFmpeg로 5초짜리 릴스 MP4 영상 렌더링
           cmd = [
-              'ffmpeg', '-y', '-loop', '1', '-i', 'safe_frame.png',
+              'ffmpeg', '-y', '-loop', '1', '-i', 'reel_frame.png',
               '-c:v', 'libx264', '-t', '5', '-pix_fmt', 'yuv420p',
-              'Safe_Reels.mp4'
+              f'{theme}_reels.mp4'
           ]
           subprocess.run(cmd, check=True)
-          print('100% Success guaranteed!')
+
+          # 3. 인스타그램용 스페인어 캡션 및 해시태그 텍스트 파일 자동 생성
+          with open(f'{theme}_caption.txt', 'w', encoding='utf-8') as f:
+              f.write(data['caption'])
+
+          print('Content Package Generated Successfully!')
           "
-      - name: Upload Safe Reels
+
+      - name: Upload Content Package
         uses: actions/upload-artifact@v4
         with:
-          name: Safe_Reels_Video
-          path: Safe_Reels.mp4
+          name: Content_Factory_Output_${{ github.event.inputs.theme }}
+          path: |
+            *_reels.mp4
+            *_caption.txt
